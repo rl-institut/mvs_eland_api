@@ -1,0 +1,12 @@
+{% block body %}
+
+<ul>
+    {% for task in tokens %}
+    <li>
+        <a href="{{ url_for('check_task', task_id=task.mvs_token) }}">check status of {{ task.mvs_token}} </a>
+    </li>
+    {% endfor %}
+
+</ul>
+
+{% endblock body %}
