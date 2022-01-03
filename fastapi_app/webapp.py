@@ -74,6 +74,18 @@ async def simulate_json_variable(request: Request):
     return queue_answer
 
 
+@app.post("/sendjson/openplan")
+async def simulate_json_variable_open_plan(request: Request):
+    """Receive mvs simulation parameter in json post request and send it to simulator"""
+    input_dict = await request.json()
+
+    # send the task to celery
+    task = celery.send_task("tasks_open_plan.run_simulation", args=[input_dict], kwargs={})
+
+    queue_answer = await check_task(task.id)
+
+    return queue_answer
+
 @app.post("/uploadjson/")
 def simulate_uploaded_json_files(request: Request, json_file: UploadFile = File(...)):
     """Receive mvs simulation parameter in json post request and send it to simulator
@@ -146,3 +158,39 @@ async def get_lp_file(task_id: str) -> Response:
 
     return response
 
+
+## WIP ##
+
+
+@app.get("/upload")
+async def upload_file(file: UploadFile = File(...)) -> JSONResponse:
+    with open(file.filename, "wb") as image:
+        content = await file.read()
+        image.write(content)
+        image.close()
+    return JSONResponse(content={"filename": file.filename}, status_code=200)
+
+
+cpath = os.getcwd()
+
+
+@app.get("/create_csv")
+async def create_csv():
+
+    with open(os.path.join(cpath, "test.txt"), "w") as fp:
+        fp.write("yhouhouhou")
+
+
+# if the file exists then let the user download it
+@app.get("/get_csv")
+async def get_csv():
+
+    with open(os.path.join(cpath, "test.txt"), "r") as fp:
+
+        stream = io.StringIO(fp.read())
+
+    response = StreamingResponse(iter([stream.getvalue()]), media_type="text/csv")
+
+    response.headers["Content-Disposition"] = "attachment; filename=export.csv"
+
+    return response

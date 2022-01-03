@@ -13,10 +13,12 @@ CELERY_RESULT_BACKEND = os.environ.get(
     "CELERY_RESULT_BACKEND", "redis://localhost:6379"
 )
 
-celery = Celery("tasks", broker=CELERY_BROKER_URL, backend=CELERY_RESULT_BACKEND)
+CELERY_TASK_NAME = os.environ.get("CELERY_TASK_NAME", "tasks")
+
+celery = Celery(CELERY_TASK_NAME, broker=CELERY_BROKER_URL, backend=CELERY_RESULT_BACKEND)
 
 
-@celery.task(name="tasks.run_simulation")
+@celery.task(name=f"{CELERY_TASK_NAME}.run_simulation")
 def run_simulation(
     simulation_input: dict,
 ) -> dict:

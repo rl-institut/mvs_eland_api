@@ -28,6 +28,20 @@ services:
       - redis
     networks:
     - sim_network
+  worker-open-plan:
+    environment:
+      - CELERY_TASK_NAME=tasks_open_plan
+    build:
+      args:
+        # this should be in a .env file in the root of the repository
+        mvs_version: ${MVS_VERSION_OP}
+      # context should be the name of the folder which define the tasks
+      context: task_queue
+      dockerfile: Dockerfile
+    depends_on:
+      - redis
+    networks:
+      - sim_network
   redis:
     image: redis
     networks:
