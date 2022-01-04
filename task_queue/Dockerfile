@@ -28,4 +28,4 @@ USER appuser
 
 WORKDIR /queue
 
-ENTRYPOINT celery -A tasks worker --loglevel=info
+ENTRYPOINT celery -A tasks worker --loglevel=info --queues=$celery_queue

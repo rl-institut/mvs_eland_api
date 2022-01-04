@@ -16,11 +16,14 @@ services:
     networks:
 #      - caddy_network
       - sim_network
-  worker:
+  worker-eland:
+    environment:
+      - CELERY_TASK_NAME=eland
     build:
       args:
         # this should be in a .env file in the root of the repository
-        mvs_version: ${MVS_VERSION}
+        mvs_version: ${MVS_ELAND_VERSION}
+        celery_queue: eland
       # context should be the name of the folder which define the tasks
       context: task_queue
       dockerfile: Dockerfile
@@ -30,11 +33,12 @@ services:
     - sim_network
   worker-open-plan:
     environment:
-      - CELERY_TASK_NAME=tasks_open_plan
+      - CELERY_TASK_NAME=open_plan
     build:
       args:
         # this should be in a .env file in the root of the repository
-        mvs_version: ${MVS_VERSION_OP}
+        mvs_version: ${MVS_OPEN_PLAN_VERSION}
+        celery_queue: open_plan
       # context should be the name of the folder which define the tasks
       context: task_queue
       dockerfile: Dockerfile
