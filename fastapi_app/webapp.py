@@ -21,6 +21,8 @@ from multi_vector_simulator.utils.constants_json_strings import (
 MVS_ELAND_VERSION = os.environ.get("MVS_ELAND_VERSION", mvs_version.version_num)
 MVS_OPEN_PLAN_VERSION = os.environ.get("MVS_OPEN_PLAN_VERSION", mvs_version.version_num)
 
+MVS_SERVER_VERSIONS = {"eland": MVS_ELAND_VERSION, "open_plan": MVS_OPEN_PLAN_VERSION}
+
 try:
     from worker import app as celery_app
 except ModuleNotFoundError:
@@ -145,18 +147,23 @@ def run_simulation_eland(request: Request, input_json=None) -> Response:
 def run_simulation_open_plan(request: Request, input_json=None) -> Response:
     return run_simulation(request, input_json, queue="open_plan")
 
+
 @app.get("/check/{task_id}")
 async def check_task(task_id: str) -> JSONResponse:
     res = celery_app.AsyncResult(task_id)
-    task = {"id": task_id, "status": res.state, "results": None}
+    task = {"server_info": None, "mvs_version": mvs_version, "id": task_id, "status": res.state, "results": None}
     if res.state == states.PENDING:
         task["status"] = res.state
     else:
         task["status"] = "DONE"
-        task["results"] = res.result
+        results_as_dict = json.loads(res.result)
+        server_info = results_as_dict.pop("SERVER")
+        task["server_info"] = server_info
+        task["mvs_version"] = MVS_SERVER_VERSIONS.get(server_info, "unknown")
+        task["results"] = json.dumps(results_as_dict)
         if "ERROR" in task["results"]:
             task["status"] = "ERROR"
-            task["results"] = json.loads(res.result)
+            task["results"] = results_as_dict
     return JSONResponse(content=jsonable_encoder(task))
 
 
