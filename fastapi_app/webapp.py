@@ -151,7 +151,7 @@ def run_simulation_open_plan(request: Request, input_json=None) -> Response:
 @app.get("/check/{task_id}")
 async def check_task(task_id: str) -> JSONResponse:
     res = celery_app.AsyncResult(task_id)
-    task = {"server_info": None, "mvs_version": mvs_version, "id": task_id, "status": res.state, "results": None}
+    task = {"server_info": None, "mvs_version": None, "id": task_id, "status": res.state, "results": None}
     if res.state == states.PENDING:
         task["status"] = res.state
     else:
