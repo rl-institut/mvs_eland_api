@@ -77,7 +77,6 @@ async def simulate_json_variable(request: Request, queue: str = "eland"):
     task = celery_app.send_task(
         f"{queue}.run_simulation", args=[input_dict], queue=queue, kwargs={}
     )
-
     queue_answer = await check_task(task.id)
 
     return queue_answer
@@ -151,7 +150,13 @@ def run_simulation_open_plan(request: Request, input_json=None) -> Response:
 @app.get("/check/{task_id}")
 async def check_task(task_id: str) -> JSONResponse:
     res = celery_app.AsyncResult(task_id)
-    task = {"server_info": None, "mvs_version": None, "id": task_id, "status": res.state, "results": None}
+    task = {
+        "server_info": None,
+        "mvs_version": None,
+        "id": task_id,
+        "status": res.state,
+        "results": None,
+    }
     if res.state == states.PENDING:
         task["status"] = res.state
     else:
@@ -164,15 +169,23 @@ async def check_task(task_id: str) -> JSONResponse:
         if "ERROR" in task["results"]:
             task["status"] = "ERROR"
             task["results"] = results_as_dict
+
     return JSONResponse(content=jsonable_encoder(task))
 
 
 @app.get("/get_lp_file/{task_id}")
 async def get_lp_file(task_id: str) -> Response:
     res = celery_app.AsyncResult(task_id)
-    task = {"server_info": None, "mvs_version": mvs_version, "id": task_id, "status": res.state, "results": None}
+    task = {
+        "server_info": None,
+        "mvs_version": mvs_version,
+        "id": task_id,
+        "status": res.state,
+        "results": None,
+    }
     if res.state == states.PENDING:
         task["status"] = res.state
+        response = JSONResponse(content=jsonable_encoder(task))
     else:
         task["status"] = "DONE"
         results_as_dict = json.loads(res.result)
@@ -184,17 +197,19 @@ async def get_lp_file(task_id: str) -> Response:
             task["status"] = "ERROR"
             task["results"] = results_as_dict
 
-    if OUTPUT_LP_FILE in results_as_dict[SIMULATION_SETTINGS]:
+        if OUTPUT_LP_FILE in results_as_dict[SIMULATION_SETTINGS]:
 
-        stream = io.StringIO(
-            results_as_dict[SIMULATION_SETTINGS][OUTPUT_LP_FILE][VALUE]
-        )
+            stream = io.StringIO(
+                results_as_dict[SIMULATION_SETTINGS][OUTPUT_LP_FILE][VALUE]
+            )
 
-        response = StreamingResponse(iter([stream.getvalue()]), media_type="text/csv")
-        response.headers["Content-Disposition"] = "attachment; filename=lp_file.txt"
+            response = StreamingResponse(
+                iter([stream.getvalue()]), media_type="text/csv"
+            )
+            response.headers["Content-Disposition"] = "attachment; filename=lp_file.txt"
 
-    else:
-        response = JSONResponse(content=jsonable_encoder(task))
+        else:
+            response = JSONResponse(content=jsonable_encoder(task))
 
     return response
 
