@@ -209,7 +209,7 @@ async def get_lp_file(task_id: str) -> Response:
             response.headers["Content-Disposition"] = "attachment; filename=lp_file.txt"
 
         else:
-            response = JSONResponse(content=jsonable_encoder(task))
+            response = "There is no LP file output, did you check the LP file option when you started your simulation?"
 
     return response
 
